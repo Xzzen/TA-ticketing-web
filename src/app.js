@@ -22,7 +22,7 @@ app.use('/api/auth', authRoutes);
 // --- ROUTE UTAMA (Check Server) ---
 app.get('/', (req, res) => {
   res.json({
-    message: "Server Event Ticketing siap meluncur tawwa! 🚀",
+    message: "Server Event Ticketing siap meluncur tawwana! 🚀",
     serverTime: new Date()
   });
 });

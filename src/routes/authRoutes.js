@@ -1,10 +1,15 @@
-// File: src/routes/authRoutes.js
 const express = require('express');
-const { register } = require('../controllers/authController');
+// Import middleware satpam
+const authenticateToken = require('../middleware/authMiddleware'); 
+const { register, login, getMe } = require('../controllers/authController');
 
 const router = express.Router();
 
-// Route: POST /api/auth/register
 router.post('/register', register);
+router.post('/login', login);
+
+// --- ROUTE DIPROTEKSI SATPAM ---
+// User harus punya token untuk akses ini
+router.get('/me', authenticateToken, getMe); 
 
 module.exports = router;
