@@ -1,25 +1,26 @@
-require('dotenv').config(); // Load konfigurasi dari .env
+require('dotenv').config(); 
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 
 // --- IMPORT ROUTES ---
-const authRoutes = require('./routes/authRoutes'); // Panggil file route yang baru dibuat
+const authRoutes = require('./routes/authRoutes'); 
+const eventRoutes = require('./routes/eventRoutes'); // <--- 1. TAMBAHKAN INI (Import Route Event)
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- MIDDLEWARE WAJIB ---
-app.use(cors()); // Agar bisa diakses dari luar
-app.use(morgan('dev')); // Logger: Mencatat request di terminal
-app.use(express.json()); // Agar bisa baca input format JSON
-app.use(express.urlencoded({ extended: true })); // Agar bisa baca input Form
+app.use(cors());
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // --- DAFTARKAN ROUTES DI SINI ---
-// Artinya: Semua URL yang diawali /api/auth akan masuk ke authRoutes
 app.use('/api/auth', authRoutes); 
+app.use('/api/events', eventRoutes); // <--- 2. TAMBAHKAN INI (Daftarkan URL /api/events)
 
-// --- ROUTE UTAMA (Check Server) ---
+// --- ROUTE UTAMA ---
 app.get('/', (req, res) => {
   res.json({
     message: "Server Event Ticketing siap meluncur tawwana! 🚀",
