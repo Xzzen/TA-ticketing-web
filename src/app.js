@@ -8,6 +8,7 @@ const morgan = require('morgan');
 const authRoutes = require('./routes/authRoutes'); 
 const eventRoutes = require('./routes/eventRoutes'); // <--- 1. TAMBAHKAN INI (Import Route Event)
 const ticketRoutes = require('./routes/ticketRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes); 
 app.use('/api/events', eventRoutes); // <--- 2. TAMBAHKAN INI (Daftarkan URL /api/events)
 app.use('/api/tickets', ticketRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // --- ROUTE UTAMA ---
 app.get('/', (req, res) => {
