@@ -3,9 +3,11 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 
+
 // --- IMPORT ROUTES ---
 const authRoutes = require('./routes/authRoutes'); 
 const eventRoutes = require('./routes/eventRoutes'); // <--- 1. TAMBAHKAN INI (Import Route Event)
+const ticketRoutes = require('./routes/ticketRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 // --- DAFTARKAN ROUTES DI SINI ---
 app.use('/api/auth', authRoutes); 
 app.use('/api/events', eventRoutes); // <--- 2. TAMBAHKAN INI (Daftarkan URL /api/events)
+app.use('/api/tickets', ticketRoutes);
 
 // --- ROUTE UTAMA ---
 app.get('/', (req, res) => {
