@@ -35,6 +35,10 @@ model Event {
   organizerId Int
   organizer   User     @relation(fields: [organizerId], references: [id], onDelete: Cascade)
   
+  // --- TAMBAHAN BARU (SOFT DELETE) ---
+  // Jika kosong (null) = Aktif. Jika ada tanggalnya = Terhapus.
+  deletedAt   DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

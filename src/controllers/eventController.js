@@ -57,14 +57,16 @@ const createEvent = async (req, res) => {
 const getAllEvents = async (req, res) => {
   try {
     const events = await prisma.event.findMany({
-      // Sertakan data pembuat event (Organizer)
+      where: {
+        deletedAt: null // <--- FILTER PENTING: Hanya ambil yang BELUM dihapus
+      },
       include: {
         organizer: {
-          select: { name: true, email: true } // Jangan tampilkan password!
+          select: { name: true, email: true }
         }
       },
       orderBy: {
-        date: 'asc' // Urutkan dari tanggal terdekat
+        date: 'asc'
       }
     });
 
@@ -78,6 +80,82 @@ const getAllEvents = async (req, res) => {
     res.status(500).json({ success: false, message: 'Gagal ambil data event' });
   }
 };
+// --- 3. FUNGSI EDIT EVENT (UPDATE) ---
+const updateEvent = async (req, res) => {
+  try {
+    const { id } = req.params; // Ambil ID event dari URL
+    const { name, description, date, location } = req.body;
+    const userId = req.user.id; 
+
+    // A. Cek dulu eventnya ada atau tidak
+    const event = await prisma.event.findUnique({ where: { id: parseInt(id) } });
+
+    if (!event) return res.status(404).json({ message: 'Event tidak ditemukan' });
+
+    // B. LOGIC ANTI-NAKAL: Cek Kepemilikan
+    // Kalau bukan pemilik DAN bukan Admin, tolak!
+    if (event.organizerId !== userId && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Anda tidak berhak mengedit event ini!' });
+    }
+
+    // C. Update Database
+    const updatedEvent = await prisma.event.update({
+      where: { id: parseInt(id) },
+      data: {
+        name,
+        description,
+        date: date ? new Date(date) : undefined, // Update kalau ada input tanggal baru
+        location
+      }
+    });
+
+    res.json({ success: true, message: 'Event berhasil diupdate', data: updatedEvent });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Gagal update event' });
+  }
+};
+
+// --- 4. FUNGSI HAPUS EVENT (DELETE) ---
+const deleteEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // A. Cek event
+    const event = await prisma.event.findUnique({ where: { id: parseInt(id) } });
+    if (!event) return res.status(404).json({ message: 'Event tidak ditemukan' });
+
+    // B. LOGIC ANTI-NAKAL
+    if (event.organizerId !== userId && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Anda tidak berhak menghapus event ini!' });
+    }
+
+   // C. SOFT DELETE (Bukan Delete beneran)
+    // Kita update kolom deletedAt menjadi waktu sekarang
+    await prisma.event.update({
+      where: { id: parseInt(id) },
+      data: {
+        deletedAt: new Date() // Tandai sebagai terhapus sekarang
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Event berhasil dihapus (Soft Delete)! Data transaksi tetap aman.' 
+    });
+
+  } catch (error) {
+    // TAMBAHKAN INI AGAR ERROR MUNCUL DI TERMINAL
+    console.error("❌ ERROR SAAT HAPUS EVENT:", error); 
+
+    res.status(500).json({ 
+      success: false, 
+      message: 'Gagal hapus event',
+      errorDetail: error.message // Tampilkan error ke Postman juga biar gampang
+    });
+  }
+};
 
 // Jangan lupa Export!
-module.exports = { createEvent, getAllEvents };
+module.exports = { createEvent, getAllEvents, updateEvent, deleteEvent };
