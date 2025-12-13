@@ -1,0 +1,313 @@
+/* File: src/App.css */
+
+/* Reset dan Font Global */
+body {
+  margin: 0;
+  font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); /* Latar belakang gradien cerah */
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Aplikasi */
+h1 {
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 40px;
+  margin-bottom: 30px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Container Login (Kartu) */
+.login-container {
+  background-color: #ffffff;
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Bayangan halus */
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto; /* Posisi tengah */
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.login-container:hover {
+  transform: translateY(-5px); /* Efek angkat saat di-hover */
+}
+
+.login-container h2 {
+  margin-bottom: 1.5rem;
+  color: #34495e;
+  font-weight: 600;
+}
+
+/* Gaya Label Form */
+.login-container label {
+  display: block;
+  text-align: left;
+  margin-bottom: 0.5rem;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+/* Gaya Input Field */
+.login-container input[type="email"],
+.login-container input[type="password"] {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 1.5rem;
+  border: 2px solid #ecf0f1;
+  border-radius: 8px;
+  box-sizing: border-box; /* Penting agar padding tidak menambah lebar */
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.login-container input:focus {
+  outline: none;
+  border-color: #3498db; /* Warna border saat fokus */
+}
+
+/* Gaya Tombol Login */
+.login-container button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(to right, #3498db, #2980b9); /* Gradien biru */
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.login-container button:hover {
+  background: linear-gradient(to right, #2980b9, #3498db);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+  transform: translateY(-2px);
+}
+
+.login-container button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
+}
+
+/* Pesan Error */
+.error-message {
+  background-color: #e74c3c;
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+/* --- GAYA UNTUK DASHBOARD (Setelah Login) --- */
+
+.dashboard-container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.9); /* Latar belakang semi-transparan */
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+    backdrop-filter: blur(8px); /* Efek blur di belakang container */
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.dashboard-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.8rem;
+}
+
+.btn-logout {
+    background-color: #e74c3c;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn-logout:hover {
+    background-color: #c0392b;
+    transform: scale(1.05);
+}
+
+/* Form Tambah Event */
+.form-container {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 40px;
+}
+
+.form-container h4 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #34495e;
+    font-size: 1.3rem;
+}
+
+.event-form input[type="text"],
+.event-form input[type="date"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #bdc3c7;
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.event-form input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.file-input-container {
+    background: #f9f9f9;
+    padding: 15px;
+    border: 2px dashed #bdc3c7;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.file-input-container:hover {
+    border-color: #3498db;
+}
+
+.btn-save {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(to right, #2ecc71, #27ae60);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.btn-save:hover {
+    background: linear-gradient(to right, #27ae60, #2ecc71);
+    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Daftar Event (Grid Card) */
+.event-list-title {
+    color: #2c3e50;
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+}
+
+.event-grid {
+    display: grid;
+    grid-templateColumns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.event-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.event-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.event-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-bottom: 3px solid #3498db;
+}
+
+.no-image {
+    height: 180px;
+    background: #ecf0f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #95a5a6;
+    font-weight: 500;
+    border-bottom: 3px solid #bdc3c7;
+}
+
+.event-details {
+    padding: 20px;
+}
+
+.event-title {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.event-meta {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.event-description {
+    font-size: 0.95rem;
+    color: #34495e;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* Batasi deskripsi jadi 3 baris */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.btn-delete {
+    width: 100%;
+    padding: 10px;
+    background-color: #fff;
+    color: #e74c3c;
+    border: 2px solid #e74c3c;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-delete:hover {
+    background-color: #e74c3c;
+    color: white;
+}
