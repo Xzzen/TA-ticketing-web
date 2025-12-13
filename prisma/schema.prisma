@@ -32,6 +32,7 @@ model Event {
   description String
   date        DateTime
   location    String
+  image       String?
   organizerId Int
   organizer   User     @relation(fields: [organizerId], references: [id], onDelete: Cascade)
   

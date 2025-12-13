@@ -29,13 +29,14 @@ const createEvent = async (req, res) => {
     // B. PROSES SIMPAN KE DATABASE
     const { name, description, date, location } = req.body;
     const organizerId = req.user.id; // Didapat otomatis dari Token (Middleware)
-
+    const imageFilename = req.file ? req.file.filename : null;
     const event = await prisma.event.create({
       data: {
         name,
         description,
         date: new Date(date), // Ubah text jadi format Tanggal
         location,
+        image: imageFilename, // <--- SIMPAN NAMA FILE KE DATABASE
         organizerId // Event ini milik user yang login
       }
     });
