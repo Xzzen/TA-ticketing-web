@@ -1,72 +1,139 @@
-# 🚀 Panduan Deployment ke AWS EC2 + Elastic IP
+# DEPLOYMENT DOCUMENTATION
 
-Dokumen ini berisi langkah-langkah mendeploy aplikasi (Backend Node.js + Frontend React) ke server AWS EC2 Ubuntu menggunakan **Elastic IP** agar alamat server tidak berubah-ubah.
-
----
-
-## 🏗️ Tahap 1: Persiapan Server & Elastic IP
-
-### 1. Buat Instance EC2
-1.  **Login ke AWS Academy** -> **Start Lab** -> **AWS Console**.
-2.  Masuk ke menu **EC2** -> **Instances** -> **Launch Instances**.
-3.  **Konfigurasi:**
-    * **Name:** `Web-Ticketing-Server`
-    * **OS:** Ubuntu Server 22.04 LTS (HVM).
-    * **Instance Type:** `t3.micro` atau `t2.micro`.
-    * **Key Pair:** Pilih `vockey`.
-4.  **Network Settings:**
-    * ✅ Allow SSH traffic from Anywhere.
-    * ✅ Allow HTTP traffic from the internet.
-    * ✅ Allow HTTPS traffic from the internet.
-5.  Klik **Launch Instance**.
-
-### 2. Setting Security Group (Buka Port)
-1.  Klik instance yang baru dibuat, masuk tab **Security**.
-2.  Klik **Security groups** (misal: `sg-0abc...`).
-3.  Klik **Edit inbound rules** -> **Add rule**.
-    * **Type:** `Custom TCP` -> **Port:** `3000` -> **Source:** `Anywhere (0.0.0.0/0)`
-    * *(Pastikan aturan SSH (22) dan HTTP (80) juga sudah ada)*.
-4.  Klik **Save rules**.
-
-### 3. Pasang Elastic IP (PENTING 🌟)
-Agar IP server permanen dan tidak ganti-ganti saat restart:
-1.  Di menu kiri EC2, cari bagian **Network & Security** -> klik **Elastic IPs**.
-2.  Klik tombol oranye **Allocate Elastic IP address**.
-3.  Langsung klik **Allocate** (biarkan settingan default).
-4.  Setelah IP muncul, klik IP tersebut (ceklis kotak di sebelahnya).
-5.  Klik menu **Actions** (di pojok kanan atas) -> Pilih **Associate Elastic IP address**.
-6.  **Instance:** Pilih instance `Web-Ticketing-Server` kamu.
-7.  **Private IP address:** Pilih IP yang muncul di dropdown.
-8.  Klik **Associate**.
-
-> **CATATAN:** Sekarang IP ini (misal: `54.12.34.56`) adalah IP abadi kamu. Gunakan IP ini untuk SSH dan setting Frontend.
+**Project Name:** Event Ticketing System (JappaJappa)
+**Server Environment:** AWS EC2 (Ubuntu 24.04 LTS)
+**Status:** Production
 
 ---
 
-## 🔌 Tahap 2: Koneksi ke Server
+## 1. Repo Github
+* **Repository URL:** [MASUKKAN_LINK_GITHUB_KAMU_DISINI]
+* **Branch:** main
 
-1.  Buka terminal (Git Bash/CMD).
-2.  Pastikan file kunci (`labsuser.pem`) ada.
-3.  Konek menggunakan Elastic IP yang baru dibuat:
-    ```bash
-    ssh -i "labsuser.pem" ubuntu@<ELASTIC-IP-KAMU>
-    ```
-    *(Contoh: `ssh -i labsuser.pem ubuntu@54.12.34.56`)*
+## 2. Production URL
+Berikut adalah akses publik untuk aplikasi ini:
+* **Frontend (Website Utama):** `http://54.173.5.21`
+* **Backend API (Base URL):** `http://54.173.5.21/api`
+* **Static Assets (Uploads):** `http://54.173.5.21/uploads/`
 
----
+## 3. Detail AWS EC2
+Spesifikasi server yang digunakan saat ini:
+* **Instance ID:** [MASUKKAN_INSTANCE_ID_AWS]
+* **Public IPv4 (Elastic IP):** `54.173.5.21`
+* **Region:** [CONTOH: ap-southeast-1 (Singapore)]
+* **OS:** Ubuntu 24.04 LTS
+* **Web Server:** Nginx
+* **Process Manager:** PM2
 
-## 🛠️ Tahap 3: Instalasi Software Server
+## 4. Konfigurasi Environment (.env)
+File `.env` harus dibuat manual di server pada root folder project.
+**List variabel wajib:**
 
-Copy-paste perintah ini ke terminal server (Ubuntu):
+PORT=3000
+DATABASE_URL="file:./prod.db"
+JWT_SECRET="[MASUKKAN_KEY_RAHASIA]"
+NODE_ENV="production"
 
-```bash
-# 1. Update Server
-sudo apt update && sudo apt upgrade -y
+## 5. Langkah Deployment (Fresh Install)
+Panduan setup dari nol di server baru (Ubuntu):
 
-# 2. Install Node.js 20
-curl -fsSL [https://deb.nodesource.com/setup_20.x](https://deb.nodesource.com/setup_20.x) | sudo -E bash -
-sudo apt install -y nodejs
+### A. Persiapan Sistem
+1.  Update OS:
+    `sudo apt update && sudo apt upgrade -y`
+2.  Install Core Tools (Nginx, Git, Node.js):
+    `sudo apt install nginx git -y`
+    `curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -`
+    `sudo apt install -y nodejs`
+3.  Install PM2:
+    `sudo npm install -g pm2`
 
-# 3. Install Git, Nginx, & PM2
-sudo apt install -y git nginx
-sudo npm install -g pm2
+### B. Setup Backend
+1.  Clone Repo:
+    `git clone [LINK_GITHUB_KAMU]`
+    `cd [NAMA_FOLDER_REPO]`
+2.  Install & Setup Env:
+    `npm install`
+    `nano .env` (Paste variabel environment lalu simpan)
+3.  Database & Permissions:
+    `npx prisma migrate deploy`
+    `mkdir -p public/uploads`
+    `chmod -R 755 public`
+
+### C. Setup Frontend
+1.  Build React:
+    `cd frontend-admin`
+    `npm install`
+    `npm run build`
+2.  Deploy ke Nginx:
+    `sudo mkdir -p /var/www/ticketing`
+    `sudo cp -r dist/* /var/www/ticketing/`
+
+## 6. Application Start (PM2)
+Cara menjalankan backend agar online 24/7:
+
+cd ~/TA-ticketing-web
+pm2 start src/app.js --name "backend-api"
+pm2 save
+pm2 startup
+
+## 7. Konfigurasi Nginx
+Lokasi Config: `/etc/nginx/sites-available/default`
+
+server {
+    listen 80;
+    server_name _;
+
+    # 1. Frontend React
+    root /var/www/ticketing;
+    index index.html;
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 2. Backend API
+    location /api/ {
+        proxy_pass http://localhost:3000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # 3. Static Images (Bypass Backend)
+    location /uploads/ {
+        alias /home/ubuntu/TA-ticketing-web/public/uploads/;
+        autoindex off;
+    }
+}
+
+*Setelah edit, wajib restart:* `sudo systemctl restart nginx`
+
+## 8. Langkah Verifikasi
+1.  Buka browser: `http://54.173.5.21` (Pastikan web muncul).
+2.  Cek Gambar: `http://54.173.5.21/uploads/[nama_file_ada]` (Pastikan gambar muncul).
+3.  Cek API: `http://54.173.5.21/api` (Pastikan merespon JSON).
+
+## 9. Troubleshooting
+* **Gambar Pecah/404:** Cek path `alias` di Nginx dan pastikan permission folder public (`chmod 755`).
+* **502 Bad Gateway:** Backend mati. Cek dengan `pm2 status` atau `pm2 logs`.
+* **Data Tidak Update:** Pastikan sudah `npm run build` di frontend dan `pm2 restart` di backend setelah pull git.
+
+## 10. Monitoring
+* **Cek Status Backend:** `pm2 status`
+* **Cek Realtime Log:** `pm2 logs`
+* **Cek Error Nginx:** `sudo tail -f /var/log/nginx/error.log`
+
+## 11. Maintenance (Prosedur Update)
+Jika ada update kodingan di GitHub, lakukan ini di server:
+
+1.  **Pull Code:** `git pull`
+2.  **Update Backend:**
+    `npm install` (jika perlu)
+    `npx prisma migrate deploy` (jika db berubah)
+    `pm2 restart backend-api`
+3.  **Update Frontend:**
+    `cd frontend-admin`
+    `npm install`
+    `npm run build`
+    `sudo cp -r dist/* /var/www/ticketing/`
