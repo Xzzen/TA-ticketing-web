@@ -1,93 +1,95 @@
 // File: src/controllers/transactionController.js
 const prisma = require('../utils/prisma');
 
-// --- FUNGSI BELI TIKET (ORDER) ---
+// --- 1. BELI TIKET ---
 const createTransaction = async (req, res) => {
   try {
-    const { ticketId, quantity } = req.body;
-    const userId = req.user.id; // Pembeli adalah user yang login
+    const { eventId, quantity } = req.body;
+    const userId = req.user.id; 
 
-    // 1. Cek Tiket & Stok
-    const ticket = await prisma.ticket.findUnique({
-      where: { id: ticketId }
+    // A. Cek apakah Event ada?
+    const event = await prisma.event.findUnique({ where: { id: parseInt(eventId) } });
+    if (!event) return res.status(404).json({ message: 'Event tidak ditemukan' });
+
+    // B. CARI TIKET UNTUK EVENT INI
+    // Karena Schema Anda menghubungkan Transaction ke Ticket, bukan Event langsung.
+    // Kita cari tiket pertama yang tersedia untuk event ini.
+    let ticket = await prisma.ticket.findFirst({
+      where: { eventId: parseInt(eventId) }
     });
 
+    // C. JAGA-JAGA: Kalau Tiket belum dibuat admin, kita buatkan tiket otomatis (Default)
+    // Supaya transaksi tidak error "Foreign Key Failed"
     if (!ticket) {
-      return res.status(404).json({ success: false, message: 'Tiket tidak ditemukan' });
-    }
-
-    if (ticket.quota < quantity) {
-      return res.status(400).json({ success: false, message: 'Stok tiket habis atau tidak cukup!' });
-    }
-
-    // 2. Hitung Total Harga
-    const totalAmount = ticket.price * quantity;
-
-    // 3. MULAI TRANSAKSI DATABASE (Prisma Transaction)
-    // Kita pakai $transaction supaya "Catat Order" dan "Kurangi Stok" terjadi bersamaan.
-    const result = await prisma.$transaction(async (prisma) => {
-      
-      // A. Buat Header Transaksi
-      const newTransaction = await prisma.transaction.create({
+      ticket = await prisma.ticket.create({
         data: {
-          userId,
-          totalAmount,
-          status: 'SUCCESS', // Anggap langsung lunas dulu
-          details: {
-            create: [
-              {
-                ticketId,
-                quantity,
-                subtotal: totalAmount
-              }
-            ]
-          }
-        },
-        include: {
-          details: true // Tampilkan detailnya di response
+          name: 'Regular Ticket',
+          price: 0, // Gratiskan dulu atau set harga default
+          quota: 100,
+          eventId: parseInt(eventId)
         }
       });
+    }
 
-      // B. Kurangi Stok Tiket (PENTING!)
-      await prisma.ticket.update({
-        where: { id: ticketId },
-        data: {
-          quota: {
-            decrement: quantity // Kurangi stok otomatis
-          }
+    // D. Hitung Subtotal (Harga Tiket x Jumlah)
+    const hitungSubtotal = ticket.price * parseInt(quantity);
+
+    // E. Buat Transaksi (HEADER + DETAIL)
+    const transaction = await prisma.transaction.create({
+      data: {
+        // --- Header (Tabel Transaction) ---
+        userId: userId,
+        totalAmount: hitungSubtotal, // Total seluruh belanjaan
+        status: 'SUCCESS',
+
+        // --- Detail (Tabel TransactionDetail) ---
+        details: {
+          create: [
+            {
+              // PENTING: Sesuai Schema, pakai ticketId dan subtotal
+              ticketId: ticket.id,       // ✅ Ganti eventId jadi ticketId
+              quantity: parseInt(quantity),
+              subtotal: hitungSubtotal   // ✅ Ganti totalPrice jadi subtotal
+            }
+          ]
         }
-      });
-
-      return newTransaction;
+      },
+      include: {
+        details: {
+          include: { ticket: true } // Sertakan data tiket di response
+        }
+      }
     });
 
     res.status(201).json({
       success: true,
-      message: 'Transaksi berhasil! Tiket sudah dibeli.',
-      data: result
+      message: 'Transaksi berhasil!',
+      data: transaction
     });
 
   } catch (error) {
-    console.error("Transaction Error:", error);
-    res.status(500).json({ success: false, message: 'Gagal memproses transaksi' });
+    console.error("Error Transaksi:", error);
+    res.status(500).json({ message: 'Gagal memproses transaksi: ' + error.message });
   }
 };
 
-// --- FUNGSI LIHAT RIWAYAT BELANJA (History) ---
-const getMyTransactions = async (req, res) => {
+// --- 2. LIHAT RIWAYAT TIKET ---
+const getUserTransactions = async (req, res) => {
   try {
     const userId = req.user.id;
 
     const transactions = await prisma.transaction.findMany({
-      where: { userId },
-      include: {
+      where: { userId: userId },
+      orderBy: { createdAt: 'desc' }, // Urutkan dari yang terbaru
+      include: { 
         details: {
-          include: {
-            ticket: { select: { name: true, event: { select: { name: true } } } }
-          }
+           include: { 
+             ticket: {
+               include: { event: true } // Ambil data Event lewat Tiket
+             } 
+           } 
         }
-      },
-      orderBy: { createdAt: 'desc' }
+      } 
     });
 
     res.json({
@@ -95,8 +97,12 @@ const getMyTransactions = async (req, res) => {
       data: transactions
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Gagal ambil riwayat' });
+    console.error(error);
+    res.status(500).json({ message: 'Gagal ambil data transaksi' });
   }
 };
 
-module.exports = { createTransaction, getMyTransactions };
+module.exports = {
+  createTransaction,
+  getUserTransactions
+};

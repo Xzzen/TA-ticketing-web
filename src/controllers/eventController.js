@@ -1,12 +1,11 @@
 // File: src/controllers/eventController.js
 const prisma = require('../utils/prisma');
-const Joi = require('joi'); // Library Validasi (Wajib ada)
+const Joi = require('joi'); 
 
 // --- 1. FUNGSI BUAT EVENT (CREATE) ---
 const createEvent = async (req, res) => {
   try {
-    // A. VALIDASI INPUT (Filter Data Nakal)
-    // Kita atur syarat data yang boleh masuk
+    // A. VALIDASI INPUT
     const schema = Joi.object({
       name: Joi.string().min(5).max(100).required()
         .messages({'string.min': 'Nama event terlalu pendek (min 5 huruf)!'}),
@@ -17,31 +16,39 @@ const createEvent = async (req, res) => {
       location: Joi.string().required()
     });
 
-    // Cek apakah data user sesuai syarat?
     const { error } = schema.validate(req.body);
     if (error) {
       return res.status(400).json({
         success: false,
-        message: error.details[0].message // Kasih tau user salahnya dimana
+        message: error.details[0].message
       });
     }
 
-    // B. PROSES SIMPAN KE DATABASE
+    // B. PROSES SIMPAN
     const { name, description, date, location } = req.body;
-    const organizerId = req.user.id; // Didapat otomatis dari Token (Middleware)
+    const organizerId = req.user.id;
     const imageFilename = req.file ? req.file.filename : null;
+    
+    // Kita buat Event sekaligus Tiket default (misal 100 tiket) biar user langsung bisa beli
     const event = await prisma.event.create({
       data: {
         name,
         description,
-        date: new Date(date), // Ubah text jadi format Tanggal
+        date: new Date(date),
         location,
-        image: imageFilename, // <--- SIMPAN NAMA FILE KE DATABASE
-        organizerId // Event ini milik user yang login
+        image: imageFilename,
+        organizerId,
+        // (Opsional) Buat tiket otomatis saat event dibuat
+        tickets: {
+            create: {
+                name: 'Regular Ticket',
+                price: 50000, // Harga Default (Bisa diedit nanti)
+                quota: 100    // Stok Default
+            }
+        }
       }
     });
 
-    // C. KIRIM RESPONSE SUKSES
     res.status(201).json({
       success: true,
       message: 'Event berhasil dibuat!',
@@ -59,12 +66,15 @@ const getAllEvents = async (req, res) => {
   try {
     const events = await prisma.event.findMany({
       where: {
-        deletedAt: null // <--- FILTER PENTING: Hanya ambil yang BELUM dihapus
+        deletedAt: null 
       },
       include: {
         organizer: {
           select: { name: true, email: true }
-        }
+        },
+        // 🔥 PERUBAHAN PENTING DISINI 🔥
+        // Sertakan data tiket agar Frontend tahu Harga & Stok!
+        tickets: true 
       },
       orderBy: {
         date: 'asc'
@@ -81,31 +91,28 @@ const getAllEvents = async (req, res) => {
     res.status(500).json({ success: false, message: 'Gagal ambil data event' });
   }
 };
+
 // --- 3. FUNGSI EDIT EVENT (UPDATE) ---
 const updateEvent = async (req, res) => {
   try {
-    const { id } = req.params; // Ambil ID event dari URL
+    const { id } = req.params;
     const { name, description, date, location } = req.body;
     const userId = req.user.id; 
 
-    // A. Cek dulu eventnya ada atau tidak
     const event = await prisma.event.findUnique({ where: { id: parseInt(id) } });
 
     if (!event) return res.status(404).json({ message: 'Event tidak ditemukan' });
 
-    // B. LOGIC ANTI-NAKAL: Cek Kepemilikan
-    // Kalau bukan pemilik DAN bukan Admin, tolak!
     if (event.organizerId !== userId && req.user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'Anda tidak berhak mengedit event ini!' });
     }
 
-    // C. Update Database
     const updatedEvent = await prisma.event.update({
       where: { id: parseInt(id) },
       data: {
         name,
         description,
-        date: date ? new Date(date) : undefined, // Update kalau ada input tanggal baru
+        date: date ? new Date(date) : undefined,
         location
       }
     });
@@ -123,40 +130,31 @@ const deleteEvent = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    // A. Cek event
     const event = await prisma.event.findUnique({ where: { id: parseInt(id) } });
     if (!event) return res.status(404).json({ message: 'Event tidak ditemukan' });
 
-    // B. LOGIC ANTI-NAKAL
     if (event.organizerId !== userId && req.user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'Anda tidak berhak menghapus event ini!' });
     }
 
-   // C. SOFT DELETE (Bukan Delete beneran)
-    // Kita update kolom deletedAt menjadi waktu sekarang
     await prisma.event.update({
       where: { id: parseInt(id) },
-      data: {
-        deletedAt: new Date() // Tandai sebagai terhapus sekarang
-      }
+      data: { deletedAt: new Date() }
     });
 
     res.json({ 
       success: true, 
-      message: 'Event berhasil dihapus (Soft Delete)! Data transaksi tetap aman.' 
+      message: 'Event berhasil dihapus (Soft Delete)!' 
     });
 
   } catch (error) {
-    // TAMBAHKAN INI AGAR ERROR MUNCUL DI TERMINAL
     console.error("❌ ERROR SAAT HAPUS EVENT:", error); 
-
     res.status(500).json({ 
       success: false, 
       message: 'Gagal hapus event',
-      errorDetail: error.message // Tampilkan error ke Postman juga biar gampang
+      errorDetail: error.message
     });
   }
 };
 
-// Jangan lupa Export!
 module.exports = { createEvent, getAllEvents, updateEvent, deleteEvent };

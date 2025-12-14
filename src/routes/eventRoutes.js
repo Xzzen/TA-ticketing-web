@@ -1,21 +1,32 @@
 // File: src/routes/eventRoutes.js
 const express = require('express');
-const authenticateToken = require('../middleware/authMiddleware'); // Import Satpam
-const { createEvent, getAllEvents, updateEvent, deleteEvent } = require('../controllers/eventController');
-const upload = require('../middleware/uploadMiddleware'); // <--- TAMBAHKAN BARIS PENTING INI
-
 const router = express.Router();
 
-// Route: POST /api/events (DIPROTEKSI - Wajib Login)
-router.post('/', authenticateToken, upload.single('image'), createEvent);
+// 1. IMPORT CONTROLLER
+const { createEvent, getAllEvents, updateEvent, deleteEvent } = require('../controllers/eventController');
 
-// Route: GET /api/events (PUBLIK - Boleh Siapa Saja)
+// 2. IMPORT MIDDLEWARE (SATPAM)
+// Perhatikan: Kita pakai kurung kurawal { } karena mengambil 2 fungsi sekaligus
+const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware');
+
+// --- PENGATURAN ROUTE ---
+
+// A. PUBLIC (Bisa diakses siapa saja tanpa login)
+// User mau lihat daftar event? Boleh dong.
 router.get('/', getAllEvents);
 
-// --- ROUTE BARU ---
-// PUT = Edit, DELETE = Hapus
-// Keduanya butuh parameter :id (Event mana yang mau diedit/hapus?)
-router.put('/:id', authenticateToken, updateEvent);
-router.delete('/:id', authenticateToken, deleteEvent);
+// B. PROTECTED & ADMIN ONLY (Harus Login & Harus Admin)
+// Urutan Satpam: Cek Token -> Cek Admin -> Cek File Upload -> Jalankan Controller
+
+// 1. Buat Event (Cuma Admin)
+router.post('/', verifyToken, verifyAdmin, upload.single('image'), createEvent);
+
+// 2. Edit Event (Cuma Admin)
+// Catatan: Saya tambahkan upload.single('image') jaga-jaga kalau mau ganti gambar event
+router.put('/:id', verifyToken, verifyAdmin, upload.single('image'), updateEvent);
+
+// 3. Hapus Event (Cuma Admin)
+router.delete('/:id', verifyToken, verifyAdmin, deleteEvent);
 
 module.exports = router;

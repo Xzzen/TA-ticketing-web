@@ -83,7 +83,7 @@ export default function Dashboard({ token, onLogout }) {
     <div className="dashboard-container">
       {/* HEADER */}
       <div className="dashboard-header">
-        <h3>🔥 Dashboard Admin</h3>
+        <h3>Dashboard Admin</h3>
         <button className="btn-logout" onClick={onLogout}>Logout</button>
       </div>
 

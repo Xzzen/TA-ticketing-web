@@ -9,7 +9,7 @@ export default function Login({ onLogin }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); // Reset error sebelum mencoba
+    setError('');
 
     try {
       // 1. Tembak ke Backend
@@ -18,48 +18,46 @@ export default function Login({ onLogin }) {
         password
       });
 
-      // --- LOGIKA DEBUGGING (TETAP DIPERTAHANKAN) ---
       console.log("✅ RESPON DARI BACKEND:", res.data);
 
-      // 2. AMBIL TOKEN DENGAN AMAN
+      // 2. AMBIL TOKEN
       const tokenAsli = res.data.token || (res.data.data && res.data.data.token);
+      
+      // 3. AMBIL ROLE (INI YANG SEBELUMNYA HILANG) 👇
+      // Kita cari role di berbagai kemungkinan tempat agar aman
+      const roleUser = res.data.role || res.data.data?.role || res.data.user?.role || 'USER';
 
       if (tokenAsli) {
-        console.log("🎫 Token berhasil diambil:", tokenAsli);
-        onLogin(tokenAsli); // Kirim token yang valid ke App.jsx
+        console.log("🎫 Token:", tokenAsli);
+        console.log("👤 Role:", roleUser); // Cek di console apakah ADMIN/USER muncul
+        
+        // PENTING: Kirim DUA data (Token DAN Role) ke App.jsx
+        onLogin(tokenAsli, roleUser); 
       } else {
-        console.error("❌ Token tidak ditemukan di dalam respon!");
-        setError('Login berhasil, tapi Token hilang. Cek Console (F12).');
+        setError('Login berhasil, tapi Token hilang.');
       }
 
     } catch (err) {
       console.error("Error saat login:", err);
-      // Tampilkan pesan error dari backend jika ada
       const pesanError = err.response?.data?.message || 'Login Gagal! Cek email/password.';
       setError(pesanError);
     }
   };
 
   return (
-    // Gunakan className dari App.css
     <div className="login-container">
       <h2>Silakan Login</h2>
       
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
+      {error && <div className="error-message">{error}</div>}
       
       <form onSubmit={handleSubmit}>
-        {/* Hapus inline style, biarkan CSS yang mengatur kerapiannya */}
         <label>Email:</label>
         <input 
           type="email" 
           value={email} 
           onChange={e => setEmail(e.target.value)} 
           required 
-          placeholder="admin@example.com"
+          placeholder="email@contoh.com"
         />
 
         <label>Password:</label>
@@ -71,7 +69,7 @@ export default function Login({ onLogin }) {
           placeholder="Masukkan password"
         />
 
-        <button type="submit">MASUK DASHBOARD</button>
+        <button type="submit">MASUK</button>
       </form>
     </div>
   );

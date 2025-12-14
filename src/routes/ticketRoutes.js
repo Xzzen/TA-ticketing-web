@@ -1,14 +1,13 @@
-// File: src/routes/ticketRoutes.js
 const express = require('express');
-const authenticateToken = require('../middleware/authMiddleware');
-const { createTicket, getTicketsByEvent } = require('../controllers/ticketController');
-
 const router = express.Router();
+// Pastikan path ini mengarah ke file yang BENAR
+const ticketController = require('../controllers/transactionController'); 
+const { verifyToken } = require('../middleware/authMiddleware');
 
-// POST /api/tickets (Wajib Login - Buat Tiket)
-router.post('/', authenticateToken, createTicket);
+// POST Beli Tiket
+router.post('/', verifyToken, ticketController.createTransaction);
 
-// GET /api/tickets/event/:eventId (Public - Lihat Tiket di Event tertentu)
-router.get('/event/:eventId', getTicketsByEvent);
+// GET Riwayat Tiket (KITA MATIKAN DULU SEMENTARA)
+// router.get('/my-tickets', verifyToken, ticketController.getUserTransactions);
 
 module.exports = router;

@@ -14,6 +14,8 @@ const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Default role adalah "USER" jika tidak diisi
     const user = await prisma.user.create({
       data: { name, email, password: hashedPassword, role: role || "USER" },
     });
@@ -39,8 +41,9 @@ const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Email atau password salah' });
     }
 
+    // ✅ DISINI KUNCINYA: Role dimasukkan ke dalam Token
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user.id, role: user.role }, 
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
@@ -48,10 +51,14 @@ const login = async (req, res) => {
     res.json({
       success: true,
       message: 'Login berhasil!',
+      // ✅ KITA KIRIM ROLE SECARA EKSPLISIT BIAR FRONTEND GAMPANG BACANYA
+      role: user.role, 
+      token: token, 
       data: {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role, // Kirim role juga di data object
         token: token 
       }
     });
@@ -61,20 +68,11 @@ const login = async (req, res) => {
   }
 };
 
-// --- 3. EXPORT (INI YANG PALING PENTING!) ---
-// Pastikan register DAN login ada di dalam kurung kurawal
-module.exports = { 
-  register, 
-  login 
-};
-
-// --- FUNGSI CEK PROFIL (BARU) ---
+// --- 3. FUNGSI CEK PROFIL ---
 const getMe = async (req, res) => {
   try {
-    // req.user.id ini didapat otomatis dari middleware tadi
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      // Pilih data yang mau ditampilkan saja (jangan tampilkan password)
       select: {
         id: true,
         name: true,
@@ -93,5 +91,9 @@ const getMe = async (req, res) => {
   }
 };
 
-// JANGAN LUPA UPDATE EXPORT DI PALING BAWAH:
-module.exports = { register, login, getMe };
+// --- 4. EXPORT SATU PINTU (LEBIH AMAN) ---
+module.exports = { 
+  register, 
+  login, 
+  getMe 
+};
