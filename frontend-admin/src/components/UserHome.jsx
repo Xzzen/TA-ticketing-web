@@ -90,7 +90,7 @@ export default function UserHome({ token, onLogout }) {
             return (
               <div key={event.id} className="event-card">
                 {event.image ? (
-                  <img src={`http://54.173.5.21/${event.image}`} alt={event.name} className="event-image"/>
+                  <img src={`http://54.173.5.21/uploads${event.image}`} alt={event.name} className="event-image"/>
                 ) : (
                   <div className="no-image">No Image</div>
                 )}
