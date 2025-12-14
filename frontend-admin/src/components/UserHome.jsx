@@ -17,7 +17,7 @@ export default function UserHome({ token, onLogout }) {
   }, []);
 
   const fetchEvents = () => {
-    axios.get('http://localhost:3000/api/events')
+    axios.get('http://54.173.5.21/api/events')
       .then(res => setEvents(res.data.data))
       .catch(err => console.error(err));
   };
@@ -25,7 +25,7 @@ export default function UserHome({ token, onLogout }) {
   // 2. AMBIL TIKET SAYA
   const fetchMyTickets = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/transactions/my-tickets', {
+      const res = await axios.get('http://54.173.5.21/api/transactions/my-tickets', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMyTickets(res.data.data);
@@ -45,7 +45,7 @@ export default function UserHome({ token, onLogout }) {
  const handleConfirmBuy = async () => {
     if (!selectedEvent) return;
     try {
-      await axios.post('http://localhost:3000/api/transactions', 
+      await axios.post('http://54.173.5.21/api/transactions', 
         { eventId: selectedEvent.id, quantity: parseInt(qty) }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -90,7 +90,7 @@ export default function UserHome({ token, onLogout }) {
             return (
               <div key={event.id} className="event-card">
                 {event.image ? (
-                  <img src={`http://localhost:3000/${event.image}`} alt={event.name} className="event-image"/>
+                  <img src={`http://54.173.5.21/${event.image}`} alt={event.name} className="event-image"/>
                 ) : (
                   <div className="no-image">No Image</div>
                 )}

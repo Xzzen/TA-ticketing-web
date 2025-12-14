@@ -13,7 +13,7 @@ export default function Login({ onLogin }) {
 
     try {
       // 1. Tembak ke Backend
-      const res = await axios.post('http://localhost:3000/api/auth/login', {
+      const res = await axios.post('http://54.173.5.21/api/auth/login', {
         email,
         password
       });

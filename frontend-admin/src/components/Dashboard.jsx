@@ -21,7 +21,7 @@ export default function Dashboard({ token, onLogout }) {
   // 1. AMBIL DATA EVENT (READ)
   const fetchEvents = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/events');
+      const res = await axios.get('http://54.173.5.21/api/events');
       setEvents(res.data.data);
     } catch (err) {
       alert('Gagal ambil data event');
@@ -52,7 +52,7 @@ export default function Dashboard({ token, onLogout }) {
     }
 
     try {
-      await axios.post('http://localhost:3000/api/events', formData, {
+      await axios.post('http://54.173.5.21/api/events', formData, {
         headers: {
           'Authorization': `Bearer ${token}`, 
           'Content-Type': 'multipart/form-data'
@@ -80,7 +80,7 @@ export default function Dashboard({ token, onLogout }) {
     if(!confirm("Yakin mau hapus event ini?")) return;
     
     try {
-      await axios.delete(`http://localhost:3000/api/events/${id}`, {
+      await axios.delete(`http://54.173.5.21/api/events/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       fetchEvents(); 
@@ -184,7 +184,7 @@ export default function Dashboard({ token, onLogout }) {
             {/* GAMBAR */}
             {event.image ? (
               <img 
-                src={`http://localhost:3000/${event.image}`} 
+                src={`http://54.173.5.21/${event.image}`} 
                 alt={event.name} 
                 className="event-image"
               />
