@@ -42,23 +42,23 @@ export default function UserHome({ token, onLogout }) {
   };
 
   // 4. FUNGSI EKSEKUSI BELI (DARI MODAL)
-  const handleConfirmBuy = async () => {
+ const handleConfirmBuy = async () => {
     if (!selectedEvent) return;
-
     try {
       await axios.post('http://localhost:3000/api/transactions', 
-        { 
-          eventId: selectedEvent.id, 
-          quantity: parseInt(qty) // Kirim jumlah sesuai input user
-        }, 
+        { eventId: selectedEvent.id, quantity: parseInt(qty) }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      alert(`✅ Berhasil membeli ${qty} tiket!`);
-      setSelectedEvent(null); // Tutup modal
-      fetchMyTickets(); // Pindah ke halaman tiket saya
-    } catch (err) {
-      alert('Gagal beli: ' + (err.response?.data?.message || err.message));
+      alert(`✅ Pembelian Berhasil!`);
+      setSelectedEvent(null);
+      
+      // 🔥 UPDATE DISINI:
+      fetchMyTickets(); // Update list tiket saya
+      fetchEvents();    // <--- TAMBAHKAN INI (Supaya stok di halaman depan ter-refresh)
+
+    } catch (err) { 
+      alert('Gagal beli: ' + err.response?.data?.message); 
     }
   };
 

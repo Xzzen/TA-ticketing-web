@@ -31,7 +31,7 @@ app.use('/api/transactions', transactionRoutes);
 // --- ROUTE UTAMA ---
 app.get('/', (req, res) => {
   res.json({
-    message: "Server Event Ticketing siap meluncur tawwana! 🚀",
+    message: "Server Event Ticketing!",
     serverTime: new Date()
   });
 });

@@ -6,65 +6,72 @@ const createTransaction = async (req, res) => {
   try {
     const { eventId, quantity } = req.body;
     const userId = req.user.id; 
+    const jumlahBeli = parseInt(quantity);
 
-    // A. Cek apakah Event ada?
+    // A. Cek Event
     const event = await prisma.event.findUnique({ where: { id: parseInt(eventId) } });
     if (!event) return res.status(404).json({ message: 'Event tidak ditemukan' });
 
-    // B. CARI TIKET UNTUK EVENT INI
-    // Karena Schema Anda menghubungkan Transaction ke Ticket, bukan Event langsung.
-    // Kita cari tiket pertama yang tersedia untuk event ini.
+    // B. Cek Tiket & Stok
     let ticket = await prisma.ticket.findFirst({
       where: { eventId: parseInt(eventId) }
     });
 
-    // C. JAGA-JAGA: Kalau Tiket belum dibuat admin, kita buatkan tiket otomatis (Default)
-    // Supaya transaksi tidak error "Foreign Key Failed"
+    // Jika tiket belum ada (case khusus), buatkan dummy
     if (!ticket) {
       ticket = await prisma.ticket.create({
-        data: {
-          name: 'Regular Ticket',
-          price: 0, // Gratiskan dulu atau set harga default
-          quota: 100,
-          eventId: parseInt(eventId)
-        }
+        data: { name: 'Regular Ticket', price: 50000, quota: 100, eventId: parseInt(eventId) }
       });
     }
 
-    // D. Hitung Subtotal (Harga Tiket x Jumlah)
-    const hitungSubtotal = ticket.price * parseInt(quantity);
+    // 🔥 PENTING: Cek apakah stok cukup?
+    if (ticket.quota < jumlahBeli) {
+      return res.status(400).json({ message: `Stok tidak cukup! Sisa: ${ticket.quota}` });
+    }
 
-    // E. Buat Transaksi (HEADER + DETAIL)
-    const transaction = await prisma.transaction.create({
-      data: {
-        // --- Header (Tabel Transaction) ---
-        userId: userId,
-        totalAmount: hitungSubtotal, // Total seluruh belanjaan
-        status: 'SUCCESS',
+    // C. Hitung Subtotal
+    const hitungSubtotal = ticket.price * jumlahBeli;
 
-        // --- Detail (Tabel TransactionDetail) ---
-        details: {
-          create: [
-            {
-              // PENTING: Sesuai Schema, pakai ticketId dan subtotal
-              ticketId: ticket.id,       // ✅ Ganti eventId jadi ticketId
-              quantity: parseInt(quantity),
-              subtotal: hitungSubtotal   // ✅ Ganti totalPrice jadi subtotal
-            }
-          ]
+    // D. DATABASE TRANSACTION (Supaya Aman)
+    // Kita pakai $transaction biar kalau gagal simpan transaksi, stok gak kepotong (Rollback)
+    const result = await prisma.$transaction(async (prisma) => {
+      
+      // 1. Kurangi Stok Tiket
+      await prisma.ticket.update({
+        where: { id: ticket.id },
+        data: {
+          quota: {
+            decrement: jumlahBeli // Fungsi ajaib Prisma: Kurangi sebesar jumlahBeli
+          }
         }
-      },
-      include: {
-        details: {
-          include: { ticket: true } // Sertakan data tiket di response
-        }
-      }
+      });
+
+      // 2. Buat Data Transaksi
+      const newTransaction = await prisma.transaction.create({
+        data: {
+          userId: userId,
+          totalAmount: hitungSubtotal,
+          status: 'SUCCESS',
+          details: {
+            create: [
+              {
+                ticketId: ticket.id,
+                quantity: jumlahBeli,
+                subtotal: hitungSubtotal
+              }
+            ]
+          }
+        },
+        include: { details: { include: { ticket: true } } }
+      });
+
+      return newTransaction;
     });
 
     res.status(201).json({
       success: true,
       message: 'Transaksi berhasil!',
-      data: transaction
+      data: result
     });
 
   } catch (error) {
@@ -77,32 +84,19 @@ const createTransaction = async (req, res) => {
 const getUserTransactions = async (req, res) => {
   try {
     const userId = req.user.id;
-
     const transactions = await prisma.transaction.findMany({
       where: { userId: userId },
-      orderBy: { createdAt: 'desc' }, // Urutkan dari yang terbaru
+      orderBy: { createdAt: 'desc' },
       include: { 
-        details: {
-           include: { 
-             ticket: {
-               include: { event: true } // Ambil data Event lewat Tiket
-             } 
-           } 
-        }
+        details: { include: { ticket: { include: { event: true } } } } 
       } 
     });
 
-    res.json({
-      success: true,
-      data: transactions
-    });
+    res.json({ success: true, data: transactions });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Gagal ambil data transaksi' });
   }
 };
 
-module.exports = {
-  createTransaction,
-  getUserTransactions
-};
+module.exports = { createTransaction, getUserTransactions };
